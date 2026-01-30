@@ -1,50 +1,82 @@
-## 目录结构（核心）
-- `data_process/`：原始数据放在 `data_process/origin/<Dataset>` 下，运行对应生成脚本产出统一格式数据
-- `generated_datasets/<dataset_name>/datasets.h5`：数据生成后的位置（默认在仓库根目录）
-- `configs`：统一配置文件存储位置
-- `run_models.py`：主入口，读取配置、训练、验证、测试、保存模型与结果
-- `unified_dataloader.py`：统一数据加载器；训练集在加载时按给定比例随机掩码，验证/测试使用预生成的 holdout 掩码
-- `modeling/` 与 `baselines/`：模型实现与基线
-- `utils.py`：日志、早停、模型保存/恢复、评估指标等工具
+# TFITS: Time Series Imputation via Dual-Perspective Fusion of Temporal and Feature Views
+Manuscript ID: IEEE LATAM Submission ID: 9732
 
-## 数据与结果路径说明
-- 数据集处理后的存储位置：`generated_datasets/<dataset_name>/datasets.h5`
-- 训练权重保存位置：`NIPS_results/<model_type>_<dataset_name>/models/<时间戳>/checkpoints.ckpt`
+Authors:
+- Junfeng Yuan
+- Kangyan Li
+- Baofu Wu
+- Jian Wan
+- Jilin Zhang
+- Yuyu Yin
+- Yan Zeng
 
-##### 数据准备
-进入data_process目录，运行数据生成文件，生成数据文件会存储在根目录generated_datasets下：
+Affiliation:
+- Hangzhou Dianzi University
+
+## Description
+#### Directory Structure
+- `data_process/`：Raw data should be placed under `data_process/origin/<Dataset>`, Some datasets are provided as zip archives.
+- `generated_datasets/<dataset_name>/datasets.h5`：Location of processed data (default is at the repository root).
+- `configs`：Stores unified model configuration files.
+- `run_models.py`：Main entry point for reading configurations, training, validation, testing, and saving models and results.
+- `unified_dataloader.py`：Unified data loader. The training set is randomly masked at a given ratio during loading, while validation/testing use pre-generated masks.
+- `modeling/` 与 `baselines/`：Implementations of models and baselines.
+- `utils.py`：Utility functions for logging, early stopping, model saving/loading, evaluation metrics, etc.
+
+#### Data and Result Paths
+- Processed dataset location: `generated_datasets/<dataset_name>/datasets.h5`
+- Saved model weights: `NIPS_results/<model_type>_<dataset_name>/models/<时间戳>/checkpoints.ckpt`
+
+## Execution
+#### Environment Setup
+Create a new conda environment:
+```bash
+conda create --name TFITS python=3.9
+```
+Activate the conda environment:
+```bash
+conda activate IFITS
+```
+Install required dependencies:
+```bash
+pip install -r requirements.txt
+```
+#### Data Preparation
+- Navigate to the `data_process` directory.
+- Enter the `origin` folder and extract the dataset archives.
+- Run the data generation script. The generated data files will be stored under `generated_datasets/` in the root directory:
 ```bash
 cd data_process
 ```
-生成文件的参数主要包含：
-- `--file_path`: 原始数据集存储位置
-- `--artificial_missing_rate`: 人工设置缺失值比例
-- `--seq_len`: 时间序列长度
-- `--dataset_name`: 数据集名称
-- `--saving_path`: 生成数据文件存储位置，默认值为generated_datasets
+Key command parameters include:
+- `--file_path`: Path to the raw dataset.
+- `--artificial_missing_rate`: Artificially set missing rate.
+- `--seq_len`: Time series length (default values are pre-configured).
+- `--dataset_name`: Name of the dataset.
+- `--saving_path`: Storage path for generated data files (default: `generated_datasets`).
 
-例如处理ETTh1数据集：
+Example for processing the ETTh1 dataset:
 ```bash
 python generate_ETT_hour_dataset.py --dataset_name ETTh1 --file_path ./origin/ETT-small/ETTh1.csv  --artificial_missing_rate 0.1
 ```
 
-生成后：
-- 数据会保存到 `generated_datasets/ETTh1_seq_len24_rate0.1/datasets.h5`
-- 配置文件中 `[dataset]` 的 `dataset_name` 需设为 `ETTh1_seq_len24_rate0.1`，`seq_len` 需与生成脚本一致（此处为 24）
-- `feature_num` 请与转换后数据的特征维度一致（ETTh1 示例通常为 7）
+After generation:
+- Data will be saved to  `generated_datasets/ETTh1_seq_len24_rate0.1/datasets.h5`
+- In the configuration file, the `[dataset]` section should set `dataset_name` to `ETTh1_seq_len24_rate0.1`, and`seq_len` must match the generation script(here: 24)
+- `feature_num` should match the feature dimension of the transformed data (e.g., typically 7 for ETTh1).
 
-##### 运行
-进入根目录，运行run_models.py文件，运行参数主要包含：
-- `--config_path`: 配置文件路径
-- `--test_mode`: 是否测试模式，默认值为False
+#### Running
+Navigate to the root directory and run `run_models.py`. Key parameters include:
+- `--config_path`: Path to the configuration file.
+- `--test_mode`: Whether to run in test mode (default: False).
 
-训练：
+Training:
 ```bash
 python run_models.py --config_path configs/test.ini
 ```
 
-测试：
-将检查点位置添加到配置文件中的[test]模块下的model_path 参数中
+Testing:
+Add the checkpoint path to the model_path parameter under the `[test]` section in the configuration file.
 ```bash
 python run_models.py --config_path configs/test.ini --test_mode
 ```
